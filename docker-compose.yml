@@ -1,0 +1,55 @@
+services:
+  db_noticias:
+    image: postgres:15
+    container_name: db_noticias_cn2
+    restart: unless-stopped
+    ports:
+      - "5020:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin1234
+      POSTGRES_DB: noticias_db
+    volumes:
+      - pgdata_noticias:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d noticias_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - red_noticias
+
+  adminer_noticias:
+    image: adminer:latest
+    container_name: adminer_noticias_cn2
+    restart: unless-stopped
+    ports:
+      - "5011:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: db_noticias
+    depends_on:
+      db_noticias:
+        condition: service_healthy
+    networks:
+      - red_noticias
+
+  web_noticias:
+    image: crud_noticias_cn2:latest
+    container_name: crud_noticias_cn2
+    restart: unless-stopped
+    ports:
+      - "5010:5000"
+    environment:
+      DATABASE_URL: postgresql://admin:admin1234@db_noticias:5432/noticias_db
+    depends_on:
+      db_noticias:
+        condition: service_healthy
+    networks:
+      - red_noticias
+
+volumes:
+  pgdata_noticias:
+
+networks:
+  red_noticias:
+    driver: bridge
